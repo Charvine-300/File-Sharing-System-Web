@@ -1,8 +1,12 @@
-import { useState, type FormEvent } from "react";
+import { useForm } from "react-hook-form";
 import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { login } from "../../app/features/authSlice";
+import Spinner from "../../components/Spinner";
+import type { LoginRequest } from "../../types/auth";
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function Login() {
   const dispatch = useAppDispatch();
@@ -10,13 +14,14 @@ export default function Login() {
   const location = useLocation();
   const loading = useAppSelector((state) => state.auth.loading);
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginRequest>({ defaultValues: { email: "", password: "" } });
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-
-    const result = await dispatch(login({ email, password }));
+  async function onSubmit(data: LoginRequest) {
+    const result = await dispatch(login(data));
 
     if (login.fulfilled.match(result)) {
       toast.success("Welcome back");
@@ -28,7 +33,7 @@ export default function Login() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card p-8">
+    <form onSubmit={handleSubmit(onSubmit)} className="card p-8">
       <h1>Sign in</h1>
       <p className="text-muted-foreground text-sm mb-6">
         Access your secure workspace
@@ -43,10 +48,12 @@ export default function Login() {
           type="email"
           autoComplete="email"
           className="input"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
+          {...register("email", {
+            required: "Email is required",
+            pattern: { value: EMAIL_PATTERN, message: "Enter a valid email address" },
+          })}
         />
+        {errors.email && <p className="text-xs text-danger">{errors.email.message}</p>}
       </div>
 
       <div className="input-field-group">
@@ -58,17 +65,19 @@ export default function Login() {
           type="password"
           autoComplete="current-password"
           className="input"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
+          {...register("password", { required: "Password is required" })}
         />
+        {errors.password && (
+          <p className="text-xs text-danger">{errors.password.message}</p>
+        )}
       </div>
 
       <button
         type="submit"
-        className="btn primary-btn normal-btn"
+        className="btn primary-btn normal-btn inline-flex items-center justify-center gap-2"
         disabled={loading}
       >
+        {loading && <Spinner size="sm" variant="on-primary" />}
         {loading ? "Signing in..." : "Sign in"}
       </button>
     </form>

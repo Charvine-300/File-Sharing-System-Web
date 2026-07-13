@@ -18,7 +18,7 @@ axiosInstance.interceptors.request.use(
   (
     config: InternalAxiosRequestConfig
   ): InternalAxiosRequestConfig => {
-    const token = localStorage.getItem("accessToken");
+    const token = sessionStorage.getItem("accessToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -36,12 +36,14 @@ axiosInstance.interceptors.response.use(
     if (error.response?.status === 401) {
       toast.error("Session expired. Please log in again.");
 
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("expiryTimeStamp");
-      localStorage.removeItem("firstName");
-      localStorage.removeItem("lastName");
-      localStorage.removeItem("userType");
+      sessionStorage.removeItem("accessToken");
+      sessionStorage.removeItem("refreshToken");
+      sessionStorage.removeItem("expiryTimeStamp");
+      sessionStorage.removeItem("firstName");
+      sessionStorage.removeItem("lastName");
+      sessionStorage.removeItem("email");
+      sessionStorage.removeItem("userType");
+      sessionStorage.removeItem("profileImageUrl");
 
       // Only redirect in the browser
       if (typeof window !== "undefined") {

@@ -1,13 +1,14 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
-import { AxiosError } from "axios";
 import { toast } from "react-hot-toast";
 import publicAxios from "../../utils/publicAxios";
 import axiosInstance from "../../utils/axiosInstance";
+import { getErrorMessage } from "../../utils/getErrorMessage";
 import type { ApiResponse } from "../../types/api";
 import type {
   ChangePasswordRequest,
   LoginRequest,
   LoginResponse,
+  UpdateProfileRequest,
 } from "../../types/auth";
 
 interface AuthState {
@@ -16,32 +17,31 @@ interface AuthState {
   expiryTimeStamp: string | null;
   firstName: string | null;
   lastName: string | null;
+  // Not returned by LoginResponse — only known once the user has saved it once
+  // via Edit Profile, since there's no endpoint yet that returns the current
+  // user's own email.
+  email: string | null;
   userType: string | null;
+  // Not yet returned by the API — wired up so the UI has somewhere to put it once it is.
+  profileImageUrl: string | null;
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
 }
 
 const initialState: AuthState = {
-  accessToken: localStorage.getItem("accessToken"),
-  refreshToken: localStorage.getItem("refreshToken"),
-  expiryTimeStamp: localStorage.getItem("expiryTimeStamp"),
-  firstName: localStorage.getItem("firstName"),
-  lastName: localStorage.getItem("lastName"),
-  userType: localStorage.getItem("userType"),
-  isAuthenticated: Boolean(localStorage.getItem("accessToken")),
+  accessToken: sessionStorage.getItem("accessToken"),
+  refreshToken: sessionStorage.getItem("refreshToken"),
+  expiryTimeStamp: sessionStorage.getItem("expiryTimeStamp"),
+  firstName: sessionStorage.getItem("firstName"),
+  lastName: sessionStorage.getItem("lastName"),
+  email: sessionStorage.getItem("email"),
+  userType: sessionStorage.getItem("userType"),
+  profileImageUrl: sessionStorage.getItem("profileImageUrl"),
+  isAuthenticated: Boolean(sessionStorage.getItem("accessToken")),
   loading: false,
   error: null,
 };
-
-function getErrorMessage(err: unknown): string {
-  if (err instanceof AxiosError) {
-    const message = (err.response?.data as { message?: string } | undefined)
-      ?.message;
-    return message ?? "An error occurred";
-  }
-  return "An error occurred";
-}
 
 export const login = createAsyncThunk(
   "auth/login",
@@ -53,7 +53,7 @@ export const login = createAsyncThunk(
       );
       return response.data.data;
     } catch (err) {
-      const message = getErrorMessage(err);
+      const message = await getErrorMessage(err);
       toast.error(message);
       return rejectWithValue(message);
     }
@@ -67,7 +67,23 @@ export const changePassword = createAsyncThunk(
       await axiosInstance.post<ApiResponse>("auth/change-password", data);
       toast.success("Password changed successfully");
     } catch (err) {
-      const message = getErrorMessage(err);
+      const message = await getErrorMessage(err);
+      toast.error(message);
+      return rejectWithValue(message);
+    }
+  }
+);
+
+// Endpoint is a guess — there's no controller for this yet, adjust the URL/shape once one exists.
+export const updateProfile = createAsyncThunk(
+  "auth/updateProfile",
+  async (data: UpdateProfileRequest, { rejectWithValue }) => {
+    try {
+      await axiosInstance.put<ApiResponse>("auth/update-profile", data);
+      toast.success("Profile updated");
+      return data;
+    } catch (err) {
+      const message = await getErrorMessage(err);
       toast.error(message);
       return rejectWithValue(message);
     }
@@ -79,19 +95,23 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     logout: (state) => {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("expiryTimeStamp");
-      localStorage.removeItem("firstName");
-      localStorage.removeItem("lastName");
-      localStorage.removeItem("userType");
+      sessionStorage.removeItem("accessToken");
+      sessionStorage.removeItem("refreshToken");
+      sessionStorage.removeItem("expiryTimeStamp");
+      sessionStorage.removeItem("firstName");
+      sessionStorage.removeItem("lastName");
+      sessionStorage.removeItem("email");
+      sessionStorage.removeItem("userType");
+      sessionStorage.removeItem("profileImageUrl");
 
       state.accessToken = null;
       state.refreshToken = null;
       state.expiryTimeStamp = null;
       state.firstName = null;
       state.lastName = null;
+      state.email = null;
       state.userType = null;
+      state.profileImageUrl = null;
       state.isAuthenticated = false;
     },
   },
@@ -113,12 +133,12 @@ const authSlice = createSlice({
             userType,
           } = action.payload;
 
-          localStorage.setItem("accessToken", accessToken);
-          localStorage.setItem("refreshToken", refreshToken);
-          localStorage.setItem("expiryTimeStamp", expiryTimeStamp);
-          localStorage.setItem("firstName", firstName);
-          localStorage.setItem("lastName", lastName);
-          localStorage.setItem("userType", userType);
+          sessionStorage.setItem("accessToken", accessToken);
+          sessionStorage.setItem("refreshToken", refreshToken);
+          sessionStorage.setItem("expiryTimeStamp", expiryTimeStamp);
+          sessionStorage.setItem("firstName", firstName);
+          sessionStorage.setItem("lastName", lastName);
+          sessionStorage.setItem("userType", userType);
 
           state.loading = false;
           state.accessToken = accessToken;
@@ -146,6 +166,31 @@ const authSlice = createSlice({
       .addCase(changePassword.rejected, (state, action) => {
         state.loading = false;
         state.error = (action.payload as string) ?? "Password change failed";
+      });
+
+    builder
+      .addCase(updateProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(
+        updateProfile.fulfilled,
+        (state, action: PayloadAction<UpdateProfileRequest>) => {
+          const { firstName, lastName, email } = action.payload;
+
+          sessionStorage.setItem("firstName", firstName);
+          sessionStorage.setItem("lastName", lastName);
+          sessionStorage.setItem("email", email);
+
+          state.loading = false;
+          state.firstName = firstName;
+          state.lastName = lastName;
+          state.email = email;
+        }
+      )
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = (action.payload as string) ?? "Profile update failed";
       });
   },
 });

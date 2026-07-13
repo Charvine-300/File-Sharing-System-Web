@@ -1,37 +1,32 @@
-import { useState, type FormEvent } from "react";
-import toast from "react-hot-toast";
+import { useForm } from "react-hook-form";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { changePassword } from "../../app/features/authSlice";
+import Spinner from "../../components/Spinner";
+import type { ChangePasswordRequest } from "../../types/auth";
 
 export default function ChangePassword() {
   const dispatch = useAppDispatch();
   const loading = useAppSelector((state) => state.auth.loading);
 
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<ChangePasswordRequest>({
+    defaultValues: { currentPassword: "", newPassword: "", confirmNewPassword: "" },
+  });
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-
-    if (newPassword !== confirmNewPassword) {
-      toast.error("New passwords do not match");
-      return;
-    }
-
-    const result = await dispatch(
-      changePassword({ currentPassword, newPassword, confirmNewPassword })
-    );
-
+  async function onSubmit(data: ChangePasswordRequest) {
+    const result = await dispatch(changePassword(data));
     if (changePassword.fulfilled.match(result)) {
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmNewPassword("");
+      reset();
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card p-8 max-w-md">
+    <form onSubmit={handleSubmit(onSubmit)} className="card p-8 max-w-md">
       <h1>Change password</h1>
       <p className="text-muted-foreground text-sm mb-6">
         Update the password on your account
@@ -46,10 +41,11 @@ export default function ChangePassword() {
           type="password"
           autoComplete="current-password"
           className="input"
-          value={currentPassword}
-          onChange={(event) => setCurrentPassword(event.target.value)}
-          required
+          {...register("currentPassword", { required: "Current password is required" })}
         />
+        {errors.currentPassword && (
+          <p className="text-xs text-danger">{errors.currentPassword.message}</p>
+        )}
       </div>
 
       <div className="input-field-group">
@@ -61,10 +57,14 @@ export default function ChangePassword() {
           type="password"
           autoComplete="new-password"
           className="input"
-          value={newPassword}
-          onChange={(event) => setNewPassword(event.target.value)}
-          required
+          {...register("newPassword", {
+            required: "New password is required",
+            minLength: { value: 8, message: "Must be at least 8 characters" },
+          })}
         />
+        {errors.newPassword && (
+          <p className="text-xs text-danger">{errors.newPassword.message}</p>
+        )}
       </div>
 
       <div className="input-field-group">
@@ -76,17 +76,23 @@ export default function ChangePassword() {
           type="password"
           autoComplete="new-password"
           className="input"
-          value={confirmNewPassword}
-          onChange={(event) => setConfirmNewPassword(event.target.value)}
-          required
+          {...register("confirmNewPassword", {
+            required: "Please confirm your new password",
+            validate: (value) =>
+              value === watch("newPassword") || "New passwords do not match",
+          })}
         />
+        {errors.confirmNewPassword && (
+          <p className="text-xs text-danger">{errors.confirmNewPassword.message}</p>
+        )}
       </div>
 
       <button
         type="submit"
-        className="btn primary-btn normal-btn"
+        className="btn primary-btn normal-btn inline-flex items-center justify-center gap-2"
         disabled={loading}
       >
+        {loading && <Spinner size="sm" variant="on-primary" />}
         {loading ? "Updating..." : "Update password"}
       </button>
     </form>
