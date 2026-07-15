@@ -6,6 +6,7 @@ import { useListLoadingState } from "../../hooks/useListLoadingState";
 import { humanize } from "../../utils/format";
 import Pagination from "../../components/Pagination";
 import Spinner from "../../components/Spinner";
+import ConfirmDialog from "../../components/ConfirmDialog";
 import FilterBar, { type ActiveFilter, type FilterFieldDef } from "../../components/FilterBar";
 import { ATTRIBUTE_TYPES } from "../../types/attributeMgmt";
 import type {
@@ -53,6 +54,8 @@ export default function AttributesList() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editingAttribute, setEditingAttribute] =
     useState<AllAttributesResponse | null>(null);
+  const [deletingAttribute, setDeletingAttribute] =
+    useState<AllAttributesResponse | null>(null);
 
   useEffect(() => {
     dispatch(getAttributes(buildAttributeParameters(activeFilters, pageNumber)));
@@ -73,15 +76,10 @@ export default function AttributesList() {
     setPageNumber(1);
   }
 
-  async function handleDelete(attribute: AllAttributesResponse) {
-    if (
-      !window.confirm(
-        `Delete attribute "${attribute.attributeName}"? This cannot be undone.`
-      )
-    ) {
-      return;
-    }
-    await dispatch(deleteAttribute(attribute.id));
+  async function handleConfirmDelete() {
+    if (!deletingAttribute) return;
+    await dispatch(deleteAttribute(deletingAttribute.id));
+    setDeletingAttribute(null);
   }
 
   return (
@@ -130,7 +128,7 @@ export default function AttributesList() {
           <table className="w-full text-left text-sm">
             <thead className="border-b border-border text-muted-foreground">
               <tr>
-                <th className="px-4 py-3 font-medium">Name</th>
+                <th className="px-4 py-3 font-medium">Name</th>k
                 <th className="hidden px-4 py-3 font-medium sm:table-cell">Type</th>
                 <th className="px-4 py-3 font-medium">
                   <span className="sr-only">Actions</span>
@@ -153,7 +151,7 @@ export default function AttributesList() {
                     <AttributeRowActions
                       attribute={attribute}
                       onEdit={setEditingAttribute}
-                      onDelete={handleDelete}
+                      onDelete={setDeletingAttribute}
                     />
                   </td>
                 </tr>
@@ -184,6 +182,17 @@ export default function AttributesList() {
           attribute={editingAttribute}
           filters={buildAttributeParameters(activeFilters, pageNumber)}
           onClose={() => setEditingAttribute(null)}
+        />
+      )}
+
+      {deletingAttribute && (
+        <ConfirmDialog
+          title="Delete attribute"
+          message={`Delete attribute "${deletingAttribute.attributeName}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          variant="danger"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setDeletingAttribute(null)}
         />
       )}
     </div>

@@ -18,6 +18,9 @@ export interface UserResponse {
   lastName: string
   email: string
   attributes: string[]
+  // Not confirmed on this DTO — added speculatively to mirror LoginResponse's
+  // ProfilePhotoUrl. Harmless if absent; used opportunistically if present.
+  profilePhotoUrl?: string
 }
 
 export interface CreateUserRequest {
@@ -25,6 +28,7 @@ export interface CreateUserRequest {
   lastName: string
   email: string
   attributes: string[]
+  profilePhoto?: File
 }
 
 export interface UpdateUserRequest {

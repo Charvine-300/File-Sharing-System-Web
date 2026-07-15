@@ -5,6 +5,7 @@ import { useCan } from "../../hooks/usePermission";
 import { useListLoadingState } from "../../hooks/useListLoadingState";
 import Pagination from "../../components/Pagination";
 import Spinner from "../../components/Spinner";
+import ConfirmDialog from "../../components/ConfirmDialog";
 import FilterBar, { type ActiveFilter, type FilterFieldDef } from "../../components/FilterBar";
 import type { AllUsersResponse, UserParameters } from "../../types/userMgmt";
 import UserRowActions from "./components/UserRowActions";
@@ -53,6 +54,8 @@ export default function UsersList() {
   const [attributesUser, setAttributesUser] = useState<AllUsersResponse | null>(
     null
   );
+  const [togglingUser, setTogglingUser] = useState<AllUsersResponse | null>(null);
+  const [deletingUser, setDeletingUser] = useState<AllUsersResponse | null>(null);
 
   useEffect(() => {
     dispatch(getUsers(buildUserParameters(activeFilters, pageNumber)));
@@ -73,15 +76,18 @@ export default function UsersList() {
     setPageNumber(1);
   }
 
-  async function handleToggleStatus(user: AllUsersResponse) {
-    await dispatch(updateUserStatus({ id: user.id, data: { isActive: !user.isActive } }));
+  async function handleConfirmToggleStatus() {
+    if (!togglingUser) return;
+    await dispatch(
+      updateUserStatus({ id: togglingUser.id, data: { isActive: !togglingUser.isActive } })
+    );
+    setTogglingUser(null);
   }
 
-  async function handleDelete(user: AllUsersResponse) {
-    if (!window.confirm(`Delete ${user.firstName} ${user.lastName}? This cannot be undone.`)) {
-      return;
-    }
-    await dispatch(deleteUser(user.id));
+  async function handleConfirmDelete() {
+    if (!deletingUser) return;
+    await dispatch(deleteUser(deletingUser.id));
+    setDeletingUser(null);
   }
 
   return (
@@ -161,8 +167,8 @@ export default function UsersList() {
                     <UserRowActions
                       user={user}
                       onManageAttributes={setAttributesUser}
-                      onToggleStatus={handleToggleStatus}
-                      onDelete={handleDelete}
+                      onToggleStatus={setTogglingUser}
+                      onDelete={setDeletingUser}
                     />
                   </td>
                 </tr>
@@ -185,6 +191,32 @@ export default function UsersList() {
       {createOpen && <CreateUserModal filters={buildUserParameters(activeFilters, pageNumber)} onClose={() => setCreateOpen(false)} />}
       {attributesUser && (
         <UserAttributesModal user={attributesUser} onClose={() => setAttributesUser(null)} />
+      )}
+
+      {togglingUser && (
+        <ConfirmDialog
+          title={togglingUser.isActive ? "Deactivate user" : "Activate user"}
+          message={
+            togglingUser.isActive
+              ? `Deactivate ${togglingUser.firstName} ${togglingUser.lastName}? They won't be able to sign in until reactivated.`
+              : `Activate ${togglingUser.firstName} ${togglingUser.lastName}? They'll be able to sign in again.`
+          }
+          confirmLabel={togglingUser.isActive ? "Deactivate" : "Activate"}
+          variant={togglingUser.isActive ? "danger" : "default"}
+          onConfirm={handleConfirmToggleStatus}
+          onCancel={() => setTogglingUser(null)}
+        />
+      )}
+
+      {deletingUser && (
+        <ConfirmDialog
+          title="Delete user"
+          message={`Delete ${deletingUser.firstName} ${deletingUser.lastName}? This cannot be undone.`}
+          confirmLabel="Delete"
+          variant="danger"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setDeletingUser(null)}
+        />
       )}
     </div>
   );

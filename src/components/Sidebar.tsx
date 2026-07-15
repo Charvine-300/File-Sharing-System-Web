@@ -52,6 +52,23 @@ function AttributesIcon() {
   );
 }
 
+function PoliciesIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-4 w-4"
+    >
+      <path d="M12 3 4 6.5v5c0 4.6 3.2 8.6 8 10 4.8-1.4 8-5.4 8-10v-5L12 3Z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  );
+}
+
 function navItemClass({ isActive }: { isActive: boolean }) {
   return `flex items-center gap-2 rounded-md px-3 py-2 text-md ${
     isActive
@@ -70,6 +87,7 @@ export function SidebarNav({ onNavigate }: SidebarNavProps) {
   const canViewFiles = useCan("files.view");
   const canViewUsers = useCan("users.view");
   const canViewAttributes = useCan("attributes.view");
+  const canViewPolicies = useCan("policies.view");
 
   return (
     <nav className="flex flex-col gap-1">
@@ -77,6 +95,12 @@ export function SidebarNav({ onNavigate }: SidebarNavProps) {
         <NavLink to="/files" className={navItemClass} onClick={onNavigate}>
           <FilesIcon />
           Files
+        </NavLink>
+      )}
+      {canViewPolicies && (
+        <NavLink to="/policies" className={navItemClass} onClick={onNavigate}>
+          <PoliciesIcon />
+          Policies
         </NavLink>
       )}
       {canViewUsers && (

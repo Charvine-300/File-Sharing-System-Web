@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
-import { createPolicy, getPolicies } from "../../../../app/features/policyMgmtSlice";
-import { getAttributeCatalog } from "../../../../app/features/attributeMgmtSlice";
-import Spinner from "../../../../components/Spinner";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { createPolicy, getPolicies } from "../../app/features/policyMgmtSlice";
+import { getAttributeCatalog } from "../../app/features/attributeMgmtSlice";
+import Spinner from "../Spinner";
+import ConfirmDialog from "../ConfirmDialog";
 import PolicyNodeEditor from "./PolicyNodeEditor";
 import {
   addGroupToGroup,
@@ -16,10 +17,9 @@ import {
   setLeafAttribute,
   toPolicyNodeRequest,
   type BuilderNode,
-} from "../../../../utils/policyBuilder";
-import { buildPolicyExpression, buildReadableExpression } from "../../../../utils/policyExpression";
-import type { AllPoliciesResponse } from "../../../../types/policyMgmt";
-import type { PolicyOperator } from "../../../../types/policyMgmt";
+} from "../../utils/policyBuilder";
+import { buildPolicyExpression, buildReadableExpression } from "../../utils/policyExpression";
+import type { AllPoliciesResponse, PolicyOperator } from "../../types/policyMgmt";
 
 interface PolicyNameForm {
   policyName: string;
@@ -39,6 +39,7 @@ export default function PolicyBuilderForm({ onCreated, onCancel }: PolicyBuilder
 
   const [tree, setTree] = useState<BuilderNode>(() => createGroup());
   const [resolving, setResolving] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState<PolicyNameForm | null>(null);
 
   const {
     register,
@@ -86,12 +87,20 @@ export default function PolicyBuilderForm({ onCreated, onCancel }: PolicyBuilder
     setTree((prev) => removeNodeByKey(prev, key));
   }
 
-  async function onSubmit(data: PolicyNameForm) {
+  function onSubmit(data: PolicyNameForm) {
     if (!complete) return;
+    setPendingSubmit(data);
+  }
+
+  async function handleConfirmCreate() {
+    if (!pendingSubmit) return;
 
     const rules = toPolicyNodeRequest(tree);
-    const result = await dispatch(createPolicy({ ...data, rules }));
-    if (!createPolicy.fulfilled.match(result)) return;
+    const result = await dispatch(createPolicy({ ...pendingSubmit, rules }));
+    if (!createPolicy.fulfilled.match(result)) {
+      setPendingSubmit(null);
+      return;
+    }
 
     // CreatePolicyAsync doesn't return the new policy's id, so it's located by
     // searching on name and matching the expression we just independently
@@ -99,9 +108,10 @@ export default function PolicyBuilderForm({ onCreated, onCancel }: PolicyBuilder
     setResolving(true);
     const expectedExpression = buildPolicyExpression(rules, attributeNameById);
     const searchResult = await dispatch(
-      getPolicies({ search: data.policyName, pageNumber: 1, pageSize: 50 })
+      getPolicies({ search: pendingSubmit.policyName, pageNumber: 1, pageSize: 50 })
     );
     setResolving(false);
+    setPendingSubmit(null);
 
     if (getPolicies.fulfilled.match(searchResult)) {
       const match = searchResult.payload.records.find(
@@ -210,10 +220,34 @@ export default function PolicyBuilderForm({ onCreated, onCancel }: PolicyBuilder
             disabled={!complete || mutating || resolving}
           >
             {(mutating || resolving) && <Spinner size="sm" variant="on-primary" />}
-            {mutating ? "Creating..." : resolving ? "Finishing up..." : "Create & continue"}
+            {mutating ? "Creating..." : resolving ? "Finishing up..." : "Create policy"}
           </button>
         </div>
       </form>
+
+      {pendingSubmit && (
+        <ConfirmDialog
+          title="Create this policy?"
+          message={
+            <>
+              <p>
+                Create <span className="font-medium text-foreground">{pendingSubmit.policyName}</span>{" "}
+                with this rule?
+              </p>
+              <p className="mt-2 rounded-md bg-muted px-3 py-2 text-foreground">
+                A user needs: {readableExpression}
+              </p>
+              <p className="mt-2">
+                Any file uploaded with this policy can only be decrypted by people who
+                match the rule above.
+              </p>
+            </>
+          }
+          confirmLabel="Create policy"
+          onConfirm={handleConfirmCreate}
+          onCancel={() => setPendingSubmit(null)}
+        />
+      )}
     </div>
   );
 }

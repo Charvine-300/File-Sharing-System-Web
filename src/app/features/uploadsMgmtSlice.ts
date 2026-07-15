@@ -47,6 +47,7 @@ function buildQueryParams(
   if (parameters.search) query.search = parameters.search;
   if (parameters.startDate) query.startDate = parameters.startDate;
   if (parameters.endDate) query.endDate = parameters.endDate;
+  if (parameters.uploadedBy) query.uploadedBy = parameters.uploadedBy;
   if (parameters.pageNumber) query.pageNumber = parameters.pageNumber;
   if (parameters.pageSize) query.pageSize = parameters.pageSize;
 
@@ -120,9 +121,8 @@ export const uploadFile = createAsyncThunk(
   }
 );
 
-// Backend currently throws NotImplementedException for this route
-// (UploadsMgmtService.UpdateFilePolicyAsync) — wired up here so it's ready
-// the moment that lands; there's no UI action calling it yet.
+// Re-encrypts the file's AES key under a new policy — only the uploader or a
+// SuperAdmin can do this server-side; anyone else gets a 403.
 export const updateFilePolicy = createAsyncThunk(
   "uploadsMgmt/updateFilePolicy",
   async (

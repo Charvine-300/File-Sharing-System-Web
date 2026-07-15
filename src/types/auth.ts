@@ -10,6 +10,8 @@ export interface LoginResponse {
   firstName: string
   lastName: string
   userType: string
+  userId: string
+  profilePhotoUrl: string
 }
 
 export interface ChangePasswordRequest {
@@ -22,4 +24,5 @@ export interface UpdateProfileRequest {
   firstName: string
   lastName: string
   email: string
+  profilePhoto?: File
 }

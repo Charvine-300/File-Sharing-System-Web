@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import { createAttribute, getAttributes } from "../../../app/features/attributeMgmtSlice";
 import Modal from "../../../components/Modal";
 import Spinner from "../../../components/Spinner";
+import ConfirmDialog from "../../../components/ConfirmDialog";
 import { ATTRIBUTE_TYPES, type AttributeType } from "../../../types/attributeMgmt";
 import { humanize, toPascalCase } from "../../../utils/format";
 import type { AttributeParameters } from "../../../types/attributeMgmt";
@@ -23,6 +25,7 @@ export default function CreateAttributeModal({
 }: CreateAttributeModalProps) {
   const dispatch = useAppDispatch();
   const mutating = useAppSelector((state) => state.attributeMgmt.mutating);
+  const [pendingSubmit, setPendingSubmit] = useState<AttributeFormValues | null>(null);
 
   const {
     register,
@@ -32,13 +35,19 @@ export default function CreateAttributeModal({
     defaultValues: { attributeName: "", attributeType: "" },
   });
 
-  async function onSubmit(data: AttributeFormValues) {
+  function onSubmit(data: AttributeFormValues) {
+    setPendingSubmit(data);
+  }
+
+  async function handleConfirmCreate() {
+    if (!pendingSubmit) return;
     const result = await dispatch(
       createAttribute({
-        attributeName: toPascalCase(data.attributeName),
-        attributeType: data.attributeType as AttributeType,
+        attributeName: toPascalCase(pendingSubmit.attributeName),
+        attributeType: pendingSubmit.attributeType as AttributeType,
       })
     );
+    setPendingSubmit(null);
     if (createAttribute.fulfilled.match(result)) {
       dispatch(getAttributes(filters));
       onClose();
@@ -98,6 +107,16 @@ export default function CreateAttributeModal({
           {mutating ? "Creating..." : "Create attribute"}
         </button>
       </form>
+
+      {pendingSubmit && (
+        <ConfirmDialog
+          title="Create this attribute?"
+          message={`Create the attribute "${toPascalCase(pendingSubmit.attributeName)}" (${humanize(pendingSubmit.attributeType)})? It'll be available to assign to users and use in policies right away.`}
+          confirmLabel="Create attribute"
+          onConfirm={handleConfirmCreate}
+          onCancel={() => setPendingSubmit(null)}
+        />
+      )}
     </Modal>
   );
 }

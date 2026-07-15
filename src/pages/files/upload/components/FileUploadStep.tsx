@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
 import { uploadFile } from "../../../../app/features/uploadsMgmtSlice";
 import Spinner from "../../../../components/Spinner";
+import ConfirmDialog from "../../../../components/ConfirmDialog";
 import { ACCEPT_ATTRIBUTE, ALLOWED_FILE_EXTENSIONS, isAllowedFile } from "../../../../utils/fileTypes";
 import type { AllPoliciesResponse } from "../../../../types/policyMgmt";
 
@@ -20,6 +21,7 @@ export default function FileUploadStep({ policy, onBack }: FileUploadStepProps) 
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   function handleFile(candidate: File | undefined) {
     if (!candidate) return;
@@ -44,9 +46,10 @@ export default function FileUploadStep({ policy, onBack }: FileUploadStepProps) 
     handleFile(event.dataTransfer.files[0]);
   }
 
-  async function handleSubmit() {
+  async function handleConfirmUpload() {
     if (!file) return;
     const result = await dispatch(uploadFile({ file, policyId: policy.id }));
+    setConfirming(false);
     if (uploadFile.fulfilled.match(result)) {
       navigate("/files", { replace: true });
     }
@@ -135,7 +138,7 @@ export default function FileUploadStep({ policy, onBack }: FileUploadStepProps) 
         </button>
         <button
           type="button"
-          onClick={handleSubmit}
+          onClick={() => setConfirming(true)}
           className="btn primary-btn normal-btn mt-0 flex-1 inline-flex items-center justify-center gap-2"
           disabled={!file || uploading}
         >
@@ -143,6 +146,24 @@ export default function FileUploadStep({ policy, onBack }: FileUploadStepProps) 
           {uploading ? "Uploading..." : "Upload file"}
         </button>
       </div>
+
+      {confirming && file && (
+        <ConfirmDialog
+          title="Upload this file?"
+          message={
+            <>
+              Upload <span className="font-medium text-foreground">{file.name}</span>{" "}
+              encrypted with the{" "}
+              <span className="font-medium text-foreground">{policy.policyName}</span>{" "}
+              policy? Only people matching that policy's rule will be able to
+              open it afterwards.
+            </>
+          }
+          confirmLabel="Upload"
+          onConfirm={handleConfirmUpload}
+          onCancel={() => setConfirming(false)}
+        />
+      )}
     </div>
   );
 }

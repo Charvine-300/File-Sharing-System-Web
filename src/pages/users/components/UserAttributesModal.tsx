@@ -8,6 +8,7 @@ import {
 import { getAttributeCatalog } from "../../../app/features/attributeMgmtSlice";
 import Modal from "../../../components/Modal";
 import Spinner from "../../../components/Spinner";
+import ConfirmDialog from "../../../components/ConfirmDialog";
 import AttributeCheckboxList from "../../../components/AttributeCheckboxList";
 import type { AllUsersResponse } from "../../../types/userMgmt";
 
@@ -26,6 +27,7 @@ export default function UserAttributesModal({ user, onClose }: UserAttributesMod
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [initialized, setInitialized] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     dispatch(getUser(user.id));
@@ -55,10 +57,11 @@ export default function UserAttributesModal({ user, onClose }: UserAttributesMod
     );
   }
 
-  async function handleSubmit() {
+  async function handleConfirmSave() {
     const result = await dispatch(
       updateUserAttributes({ id: user.id, data: { attributes: selectedIds } })
     );
+    setConfirming(false);
     if (updateUserAttributes.fulfilled.match(result)) {
       onClose();
     }
@@ -84,11 +87,21 @@ export default function UserAttributesModal({ user, onClose }: UserAttributesMod
         type="button"
         className="btn primary-btn normal-btn inline-flex items-center justify-center gap-2"
         disabled={loading || mutating}
-        onClick={handleSubmit}
+        onClick={() => setConfirming(true)}
       >
         {mutating && <Spinner size="sm" variant="on-primary" />}
         {mutating ? "Saving..." : "Save attributes"}
       </button>
+
+      {confirming && (
+        <ConfirmDialog
+          title="Update attributes?"
+          message={`This changes which files ${user.firstName} ${user.lastName} can decrypt. Continue?`}
+          confirmLabel="Save attributes"
+          onConfirm={handleConfirmSave}
+          onCancel={() => setConfirming(false)}
+        />
+      )}
     </Modal>
   );
 }

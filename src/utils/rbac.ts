@@ -19,6 +19,11 @@ export const PERMISSIONS = {
   "attributes.view": [USER_TYPES.SUPER_ADMIN],
   "attributes.manage": [USER_TYPES.SUPER_ADMIN],
   "files.view": [USER_TYPES.SUPER_ADMIN, USER_TYPES.REGULAR_USER],
+  // PoliciesController has no [SuperAdmin] attributes — any authenticated user
+  // can manage policies (matches policy creation already being available inline
+  // during file upload for everyone).
+  "policies.view": [USER_TYPES.SUPER_ADMIN, USER_TYPES.REGULAR_USER],
+  "policies.manage": [USER_TYPES.SUPER_ADMIN, USER_TYPES.REGULAR_USER],
 } as const satisfies Record<string, readonly UserType[]>;
 
 export type Permission = keyof typeof PERMISSIONS;
@@ -34,4 +39,14 @@ export function can(
 
 export function isSuperAdmin(userType: string | null | undefined): boolean {
   return userType === USER_TYPES.SUPER_ADMIN;
+}
+
+// Mirrors UploadsMgmtService.UpdateFilePolicyAsync's authorization check:
+// only the uploader or a SuperAdmin may change a file's policy.
+export function canChangeFilePolicy(
+  uploadedById: string,
+  currentUserId: string | null | undefined,
+  userType: string | null | undefined
+): boolean {
+  return uploadedById === currentUserId || isSuperAdmin(userType);
 }

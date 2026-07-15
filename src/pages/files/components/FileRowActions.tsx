@@ -3,15 +3,19 @@ import type { FileResponse } from "../../../types/uploadsMgmt";
 
 interface FileRowActionsProps {
   file: FileResponse;
+  canChangePolicy: boolean;
   onViewDetails: (file: FileResponse) => void;
   onDownload: (file: FileResponse) => void;
+  onChangePolicy: (file: FileResponse) => void;
   onDelete: (file: FileResponse) => void;
 }
 
 export default function FileRowActions({
   file,
+  canChangePolicy,
   onViewDetails,
   onDownload,
+  onChangePolicy,
   onDelete,
 }: FileRowActionsProps) {
   return (
@@ -58,6 +62,19 @@ export default function FileRowActions({
           >
             Download
           </button>
+          {canChangePolicy && (
+            <button
+              type="button"
+              role="menuitem"
+              className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-foreground hover:bg-secondary"
+              onClick={() => {
+                close();
+                onChangePolicy(file);
+              }}
+            >
+              Change policy
+            </button>
+          )}
           <button
             type="button"
             role="menuitem"

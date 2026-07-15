@@ -1,11 +1,18 @@
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
-import { updateProfile } from "../app/features/authSlice";
-import Avatar from "../components/Avatar";
+import { fetchCurrentUser, updateProfile } from "../app/features/authSlice";
+import ProfilePhotoInput from "../components/ProfilePhotoInput";
 import Spinner from "../components/Spinner";
 import type { UpdateProfileRequest } from "../types/auth";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+interface EditProfileFormValues {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
 
 export default function EditProfile() {
   const dispatch = useAppDispatch();
@@ -13,11 +20,14 @@ export default function EditProfile() {
     (state) => state.auth
   );
 
+  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
+
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
-  } = useForm<UpdateProfileRequest>({
+  } = useForm<EditProfileFormValues>({
     defaultValues: {
       firstName: firstName ?? "",
       lastName: lastName ?? "",
@@ -25,8 +35,24 @@ export default function EditProfile() {
     },
   });
 
-  async function onSubmit(data: UpdateProfileRequest) {
-    await dispatch(updateProfile(data));
+  // Refresh from the server on mount so the form reflects more than just
+  // what login returned (login doesn't include email, for instance).
+  useEffect(() => {
+    dispatch(fetchCurrentUser());
+  }, [dispatch]);
+
+  useEffect(() => {
+    reset({
+      firstName: firstName ?? "",
+      lastName: lastName ?? "",
+      email: email ?? "",
+    });
+  }, [firstName, lastName, email, reset]);
+
+  async function onSubmit(data: EditProfileFormValues) {
+    const payload: UpdateProfileRequest = { ...data };
+    if (profilePhoto) payload.profilePhoto = profilePhoto;
+    await dispatch(updateProfile(payload));
   }
 
   return (
@@ -36,20 +62,13 @@ export default function EditProfile() {
         Update the details on your account
       </p>
 
-      <div className="mb-6 flex items-center gap-4">
-        <Avatar
-          src={profileImageUrl}
-          firstName={firstName}
-          lastName={lastName}
-        />
-        <button
-          type="button"
-          disabled
-          className="cursor-not-allowed text-sm text-muted-foreground"
-        >
-          Change photo (coming soon)
-        </button>
-      </div>
+      <ProfilePhotoInput
+        value={profilePhoto}
+        onChange={setProfilePhoto}
+        currentPhotoUrl={profileImageUrl}
+        firstName={firstName}
+        lastName={lastName}
+      />
 
       <div className="input-field-group">
         <label className="label" htmlFor="firstName">

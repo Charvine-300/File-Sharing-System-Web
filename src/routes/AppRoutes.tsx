@@ -9,6 +9,8 @@ import UsersList from "../pages/users/UsersList";
 import AttributesList from "../pages/attributes/AttributesList";
 import FilesList from "../pages/files/FilesList";
 import UploadFilePage from "../pages/files/upload/UploadFilePage";
+import PoliciesList from "../pages/policies/PoliciesList";
+import PolicyDetailsPage from "../pages/policies/PolicyDetailsPage";
 import NotFound from "../pages/NotFound";
 import ProtectedRoute from "./ProtectedRoute";
 import RequireRole from "./RequireRole";
@@ -32,6 +34,8 @@ export default function AppRoutes() {
         <Route path="/profile/edit" element={<EditProfile />} />
         <Route path="/files" element={<FilesList />} />
         <Route path="/files/upload" element={<UploadFilePage />} />
+        <Route path="/policies" element={<PoliciesList />} />
+        <Route path="/policies/:id" element={<PolicyDetailsPage />} />
         <Route
           path="/users"
           element={

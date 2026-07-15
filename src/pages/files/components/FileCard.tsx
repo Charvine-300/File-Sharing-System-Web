@@ -1,3 +1,5 @@
+import { useAppSelector } from "../../../app/hooks";
+import { canChangeFilePolicy } from "../../../utils/rbac";
 import { formatDate } from "../../../utils/date";
 import FileRowActions from "./FileRowActions";
 import type { FileResponse } from "../../../types/uploadsMgmt";
@@ -6,6 +8,7 @@ interface FileCardProps {
   file: FileResponse;
   onViewDetails: (file: FileResponse) => void;
   onDownload: (file: FileResponse) => void;
+  onChangePolicy: (file: FileResponse) => void;
   onDelete: (file: FileResponse) => void;
 }
 
@@ -32,7 +35,17 @@ function getExtensionLabel(fileName: string): string {
   return parts[parts.length - 1].toUpperCase();
 }
 
-export default function FileCard({ file, onViewDetails, onDownload, onDelete }: FileCardProps) {
+export default function FileCard({
+  file,
+  onViewDetails,
+  onDownload,
+  onChangePolicy,
+  onDelete,
+}: FileCardProps) {
+  const userId = useAppSelector((state) => state.auth.userId);
+  const userType = useAppSelector((state) => state.auth.userType);
+  const canChangePolicy = canChangeFilePolicy(file.uploadedById, userId, userType);
+
   return (
     <div className="card flex flex-col gap-3 p-4">
       <div className="flex items-start justify-between gap-2">
@@ -41,8 +54,10 @@ export default function FileCard({ file, onViewDetails, onDownload, onDelete }: 
         </div>
         <FileRowActions
           file={file}
+          canChangePolicy={canChangePolicy}
           onViewDetails={onViewDetails}
           onDownload={onDownload}
+          onChangePolicy={onChangePolicy}
           onDelete={onDelete}
         />
       </div>

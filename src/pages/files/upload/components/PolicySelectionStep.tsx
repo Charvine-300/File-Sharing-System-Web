@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
 import { getPolicies } from "../../../../app/features/policyMgmtSlice";
 import Spinner from "../../../../components/Spinner";
-import PolicyCard from "./PolicyCard";
-import PolicyBuilderForm from "./PolicyBuilderForm";
+import PolicyCard from "../../../../components/policy/PolicyCard";
+import PolicyBuilderForm from "../../../../components/policy/PolicyBuilderForm";
 import type { AllPoliciesResponse } from "../../../../types/policyMgmt";
 
 interface PolicySelectionStepProps {

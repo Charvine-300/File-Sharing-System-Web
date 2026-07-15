@@ -1,7 +1,7 @@
-import { humanize } from "../../../../utils/format";
-import type { BuilderNode } from "../../../../utils/policyBuilder";
-import type { AllAttributesResponse } from "../../../../types/attributeMgmt";
-import type { PolicyOperator } from "../../../../types/policyMgmt";
+import { humanize } from "../../utils/format";
+import type { BuilderNode } from "../../utils/policyBuilder";
+import type { AllAttributesResponse } from "../../types/attributeMgmt";
+import type { PolicyOperator } from "../../types/policyMgmt";
 
 interface PolicyNodeEditorProps {
   node: BuilderNode;

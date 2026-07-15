@@ -5,16 +5,12 @@ import { deleteFile, downloadFile, getFiles } from "../../app/features/uploadsMg
 import { useListLoadingState } from "../../hooks/useListLoadingState";
 import Pagination from "../../components/Pagination";
 import Spinner from "../../components/Spinner";
+import ConfirmDialog from "../../components/ConfirmDialog";
 import FilterBar, { type ActiveFilter, type FilterFieldDef } from "../../components/FilterBar";
 import FileCard from "./components/FileCard";
 import FileDetailsModal from "./components/FileDetailsModal";
+import ChangeFilePolicyModal from "./components/ChangeFilePolicyModal";
 import type { FileParameters, FileResponse } from "../../types/uploadsMgmt";
-
-const FILE_FILTER_FIELDS: FilterFieldDef[] = [
-  { key: "search", label: "File name", type: "text", placeholder: "Search..." },
-  { key: "startDate", label: "Uploaded after", type: "date" },
-  { key: "endDate", label: "Uploaded before", type: "date" },
-];
 
 function buildFileParameters(activeFilters: ActiveFilter[], pageNumber: number): FileParameters {
   const params: FileParameters = { pageNumber, pageSize: 10 };
@@ -23,6 +19,7 @@ function buildFileParameters(activeFilters: ActiveFilter[], pageNumber: number):
     if (filter.key === "search") params.search = filter.value;
     if (filter.key === "startDate") params.startDate = filter.value;
     if (filter.key === "endDate") params.endDate = filter.value;
+    if (filter.key === "uploadedBy") params.uploadedBy = filter.value;
   }
 
   return params;
@@ -33,11 +30,30 @@ export default function FilesList() {
   const { files, loading, currentPage, totalPages, totalRecords, pageSize } = useAppSelector(
     (state) => state.uploadsMgmt
   );
+  const userId = useAppSelector((state) => state.auth.userId);
   const { showFullLoader, showInlineLoader } = useListLoadingState(loading, files.length);
+
+  const fileFilterFields: FilterFieldDef[] = [
+    { key: "search", label: "File name", type: "text", placeholder: "Search..." },
+    { key: "startDate", label: "Uploaded after", type: "date" },
+    { key: "endDate", label: "Uploaded before", type: "date" },
+    ...(userId
+      ? [
+          {
+            key: "uploadedBy",
+            label: "Uploaded by",
+            type: "select" as const,
+            options: [{ value: userId, label: "Me" }],
+          },
+        ]
+      : []),
+  ];
 
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([]);
   const [pageNumber, setPageNumber] = useState(1);
   const [detailsFile, setDetailsFile] = useState<FileResponse | null>(null);
+  const [changingPolicyFile, setChangingPolicyFile] = useState<FileResponse | null>(null);
+  const [deletingFile, setDeletingFile] = useState<FileResponse | null>(null);
 
   useEffect(() => {
     dispatch(getFiles(buildFileParameters(activeFilters, pageNumber)));
@@ -62,11 +78,14 @@ export default function FilesList() {
     await dispatch(downloadFile({ id: file.id, fileName: file.fileName }));
   }
 
-  async function handleDelete(file: FileResponse) {
-    if (!window.confirm(`Delete "${file.fileName}"? This cannot be undone.`)) {
-      return;
-    }
-    await dispatch(deleteFile(file.id));
+  function refetch() {
+    dispatch(getFiles(buildFileParameters(activeFilters, pageNumber)));
+  }
+
+  async function handleConfirmDelete() {
+    if (!deletingFile) return;
+    await dispatch(deleteFile(deletingFile.id));
+    setDeletingFile(null);
   }
 
   return (
@@ -87,7 +106,7 @@ export default function FilesList() {
       </div>
 
       <FilterBar
-        fields={FILE_FILTER_FIELDS}
+        fields={fileFilterFields}
         activeFilters={activeFilters}
         onAdd={handleAddFilter}
         onRemove={handleRemoveFilter}
@@ -116,7 +135,8 @@ export default function FilesList() {
                 file={file}
                 onViewDetails={setDetailsFile}
                 onDownload={handleDownload}
-                onDelete={handleDelete}
+                onChangePolicy={setChangingPolicyFile}
+                onDelete={setDeletingFile}
               />
             ))}
           </div>
@@ -135,6 +155,25 @@ export default function FilesList() {
 
       {detailsFile && (
         <FileDetailsModal file={detailsFile} onClose={() => setDetailsFile(null)} />
+      )}
+
+      {changingPolicyFile && (
+        <ChangeFilePolicyModal
+          file={changingPolicyFile}
+          onClose={() => setChangingPolicyFile(null)}
+          onChanged={refetch}
+        />
+      )}
+
+      {deletingFile && (
+        <ConfirmDialog
+          title="Delete file"
+          message={`Delete "${deletingFile.fileName}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          variant="danger"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setDeletingFile(null)}
+        />
       )}
     </div>
   );

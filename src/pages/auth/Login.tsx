@@ -33,53 +33,55 @@ export default function Login() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="card p-8">
-      <h1>Sign in</h1>
-      <p className="text-muted-foreground text-sm mb-6">
-        Access your secure workspace
-      </p>
+    <div className="card p-8">
+        <h1>Sign in</h1>
+        <p className="text-muted-foreground text-sm mb-6">
+          Access your secure workspace
+        </p>
 
-      <div className="input-field-group">
-        <label className="label" htmlFor="email">
-          Email
-        </label>
-        <input
-          id="email"
-          type="email"
-          autoComplete="email"
-          className="input"
-          {...register("email", {
-            required: "Email is required",
-            pattern: { value: EMAIL_PATTERN, message: "Enter a valid email address" },
-          })}
-        />
-        {errors.email && <p className="text-xs text-danger">{errors.email.message}</p>}
-      </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="py-4">
+        <div className="input-field-group">
+          <label className="label" htmlFor="email">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            className="input"
+            {...register("email", {
+              required: "Email is required",
+              pattern: { value: EMAIL_PATTERN, message: "Enter a valid email address" },
+            })}
+          />
+          {errors.email && <p className="text-xs text-danger">{errors.email.message}</p>}
+        </div>
 
-      <div className="input-field-group">
-        <label className="label" htmlFor="password">
-          Password
-        </label>
-        <input
-          id="password"
-          type="password"
-          autoComplete="current-password"
-          className="input"
-          {...register("password", { required: "Password is required" })}
-        />
-        {errors.password && (
-          <p className="text-xs text-danger">{errors.password.message}</p>
-        )}
-      </div>
+        <div className="input-field-group">
+          <label className="label" htmlFor="password">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            className="input"
+            {...register("password", { required: "Password is required" })}
+          />
+          {errors.password && (
+            <p className="text-xs text-danger">{errors.password.message}</p>
+          )}
+        </div>
 
-      <button
-        type="submit"
-        className="btn primary-btn normal-btn inline-flex items-center justify-center gap-2"
-        disabled={loading}
-      >
-        {loading && <Spinner size="sm" variant="on-primary" />}
-        {loading ? "Signing in..." : "Sign in"}
-      </button>
-    </form>
+        <button
+          type="submit"
+          className="btn primary-btn normal-btn inline-flex items-center justify-center gap-2"
+          disabled={loading}
+        >
+          {loading && <Spinner size="sm" variant="on-primary" />}
+          {loading ? "Signing in..." : "Sign in"}
+        </button>
+      </form>
+    </div>
   );
 }

@@ -5,7 +5,9 @@ import { createUser, getUsers } from "../../../app/features/userMgmtSlice";
 import { getAttributeCatalog } from "../../../app/features/attributeMgmtSlice";
 import Modal from "../../../components/Modal";
 import Spinner from "../../../components/Spinner";
+import ConfirmDialog from "../../../components/ConfirmDialog";
 import AttributeCheckboxList from "../../../components/AttributeCheckboxList";
+import ProfilePhotoInput from "../../../components/ProfilePhotoInput";
 import type { UserParameters } from "../../../types/userMgmt";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -28,6 +30,8 @@ export default function CreateUserModal({ filters, onClose }: CreateUserModalPro
   const catalogLoading = useAppSelector((state) => state.attributeMgmt.catalogLoading);
 
   const [selectedAttributeIds, setSelectedAttributeIds] = useState<string[]>([]);
+  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
+  const [pendingSubmit, setPendingSubmit] = useState<CreateUserFormValues | null>(null);
 
   const {
     register,
@@ -47,10 +51,20 @@ export default function CreateUserModal({ filters, onClose }: CreateUserModalPro
     );
   }
 
-  async function onSubmit(data: CreateUserFormValues) {
+  function onSubmit(data: CreateUserFormValues) {
+    setPendingSubmit(data);
+  }
+
+  async function handleConfirmCreate() {
+    if (!pendingSubmit) return;
     const result = await dispatch(
-      createUser({ ...data, attributes: selectedAttributeIds })
+      createUser({
+        ...pendingSubmit,
+        attributes: selectedAttributeIds,
+        profilePhoto: profilePhoto ?? undefined,
+      })
     );
+    setPendingSubmit(null);
     if (createUser.fulfilled.match(result)) {
       dispatch(getUsers(filters));
       onClose();
@@ -60,6 +74,8 @@ export default function CreateUserModal({ filters, onClose }: CreateUserModalPro
   return (
     <Modal title="Create user" onClose={onClose}>
       <form onSubmit={handleSubmit(onSubmit)}>
+        <ProfilePhotoInput value={profilePhoto} onChange={setProfilePhoto} />
+
         <div className="input-field-group">
           <label className="label" htmlFor="createFirstName">
             First name
@@ -128,6 +144,24 @@ export default function CreateUserModal({ filters, onClose }: CreateUserModalPro
           {mutating ? "Creating..." : "Create user"}
         </button>
       </form>
+
+      {pendingSubmit && (
+        <ConfirmDialog
+          title="Create this user?"
+          message={
+            <>
+              Create an account for{" "}
+              <span className="font-medium text-foreground">
+                {pendingSubmit.firstName} {pendingSubmit.lastName}
+              </span>
+              ? They'll be emailed a generated password at {pendingSubmit.email}.
+            </>
+          }
+          confirmLabel="Create user"
+          onConfirm={handleConfirmCreate}
+          onCancel={() => setPendingSubmit(null)}
+        />
+      )}
     </Modal>
   );
 }

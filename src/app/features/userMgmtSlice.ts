@@ -85,11 +85,23 @@ export const getUser = createAsyncThunk(
   }
 );
 
+// Sent as multipart/form-data since CreateUserRequest now takes an optional
+// ProfilePhoto (IFormFile) — this assumes the controller action switched from
+// [FromBody] to [FromForm] to accommodate that, matching the file-upload pattern.
 export const createUser = createAsyncThunk(
   "userMgmt/createUser",
   async (data: CreateUserRequest, { rejectWithValue }) => {
     try {
-      await axiosInstance.post<ApiResponse>("users/create", data);
+      const formData = new FormData();
+      formData.append("FirstName", data.firstName);
+      formData.append("LastName", data.lastName);
+      formData.append("Email", data.email);
+      data.attributes.forEach((id) => formData.append("Attributes", id));
+      if (data.profilePhoto) formData.append("ProfilePhoto", data.profilePhoto);
+
+      await axiosInstance.post<ApiResponse>("users/create", formData, {
+        headers: { "Content-Type": undefined },
+      });
       toast.success("User created successfully");
     } catch (err) {
       const message = await getErrorMessage(err);

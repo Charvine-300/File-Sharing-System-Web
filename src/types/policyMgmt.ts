@@ -1,4 +1,5 @@
 import type { RequestParameters } from "./api"
+import type { FileResponse } from "./uploadsMgmt"
 
 // Mirrors the backend `PolicyOperator` enum.
 export const POLICY_OPERATORS = ["And", "Or"] as const
@@ -19,6 +20,7 @@ export interface PolicyDetailsResponse {
   policyExpression: string
   description: string
   isSystemPolicy: boolean
+  encryptedFiles: FileResponse[]
 }
 
 export interface PolicyNodeRequest {
