@@ -160,6 +160,32 @@ input, textarea, select {
   display: none;
 }
 
+/* Thin, theme-aware scrollbars everywhere instead of the browser default. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted-foreground);
+}
+
 @layer utilities {
   .card {
     @apply bg-card text-card-foreground border border-border rounded-lg shadow-sm;

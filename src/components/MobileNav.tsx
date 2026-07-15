@@ -13,7 +13,7 @@ interface MobileNavProps {
 export default function MobileNav({ open, onClose }: MobileNavProps) {
   return createPortal(
     <div
-      className={`modal-overlay fixed inset-0 z-30 transition-opacity duration-300 ease-out md:hidden ${
+      className={`modal-overlay fixed inset-0 z-30 transition-opacity duration-300 ease-out lg:hidden ${
         open ? "opacity-100" : "pointer-events-none opacity-0"
       }`}
       onClick={onClose}

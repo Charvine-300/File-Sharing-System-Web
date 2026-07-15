@@ -18,7 +18,7 @@ export default function DashboardLayout() {
               type="button"
               onClick={() => setMobileNavOpen(true)}
               aria-label="Open menu"
-              className="cursor-pointer rounded-md p-1.5 hover:bg-secondary md:hidden"
+              className="cursor-pointer rounded-md p-1.5 hover:bg-secondary lg:hidden"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -42,10 +42,12 @@ export default function DashboardLayout() {
           </div>
         </div>
       </header>
-      <div className="mx-auto flex w-full min-h-0 max-w-[1440px] flex-1">
+      <div className="flex min-h-0 flex-1">
         <Sidebar />
-        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
-          <Outlet />
+        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="mx-auto max-w-[1440px] p-4 sm:p-6">
+            <Outlet />
+          </div>
         </main>
       </div>
       <MobileNav open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />

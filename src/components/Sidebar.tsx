@@ -121,7 +121,7 @@ export function SidebarNav({ onNavigate }: SidebarNavProps) {
 
 export default function Sidebar() {
   return (
-    <aside className="hidden w-56 shrink-0 overflow-y-auto border-r border-border p-4 md:block">
+    <aside className="hidden w-56 shrink-0 overflow-y-auto border-r border-border p-4 lg:block">
       <SidebarNav />
     </aside>
   );
