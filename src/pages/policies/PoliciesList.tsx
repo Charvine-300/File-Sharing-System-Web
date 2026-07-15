@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { deletePolicy, getPolicies } from "../../app/features/policyMgmtSlice";
 import { useCan } from "../../hooks/usePermission";
@@ -47,10 +48,21 @@ export default function PoliciesList() {
   const [creating, setCreating] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState<AllPoliciesResponse | null>(null);
   const [deletingPolicy, setDeletingPolicy] = useState<AllPoliciesResponse | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     dispatch(getPolicies(buildPolicyParameters(activeFilters, pageNumber)));
   }, [dispatch, activeFilters, pageNumber]);
+
+  // Lets the Dashboard's "Create policy" quick action link straight into the
+  // builder via /policies?action=create instead of just landing on the list.
+  useEffect(() => {
+    if (searchParams.get("action") === "create") {
+      setCreating(true);
+      searchParams.delete("action");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   function handleAddFilter(key: string, value: string) {
     setActiveFilters((prev) => [...prev.filter((filter) => filter.key !== key), { key, value }]);

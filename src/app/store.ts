@@ -4,6 +4,7 @@ import userMgmtReducer from "./features/userMgmtSlice";
 import attributeMgmtReducer from "./features/attributeMgmtSlice";
 import policyMgmtReducer from "./features/policyMgmtSlice";
 import uploadsMgmtReducer from "./features/uploadsMgmtSlice";
+import dashboardReducer from "./features/dashboardSlice";
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     attributeMgmt: attributeMgmtReducer,
     policyMgmt: policyMgmtReducer,
     uploadsMgmt: uploadsMgmtReducer,
+    dashboard: dashboardReducer,
   },
 });
 

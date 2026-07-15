@@ -8,6 +8,7 @@ import EditProfile from "../pages/EditProfile";
 import UsersList from "../pages/users/UsersList";
 import AttributesList from "../pages/attributes/AttributesList";
 import FilesList from "../pages/files/FilesList";
+import FileDetailsPage from "../pages/files/FileDetailsPage";
 import UploadFilePage from "../pages/files/upload/UploadFilePage";
 import PoliciesList from "../pages/policies/PoliciesList";
 import PolicyDetailsPage from "../pages/policies/PolicyDetailsPage";
@@ -34,6 +35,7 @@ export default function AppRoutes() {
         <Route path="/profile/edit" element={<EditProfile />} />
         <Route path="/files" element={<FilesList />} />
         <Route path="/files/upload" element={<UploadFilePage />} />
+        <Route path="/files/:id" element={<FileDetailsPage />} />
         <Route path="/policies" element={<PoliciesList />} />
         <Route path="/policies/:id" element={<PolicyDetailsPage />} />
         <Route

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { deleteAttribute, getAttributes } from "../../app/features/attributeMgmtSlice";
 import { useCan } from "../../hooks/usePermission";
@@ -56,10 +57,21 @@ export default function AttributesList() {
     useState<AllAttributesResponse | null>(null);
   const [deletingAttribute, setDeletingAttribute] =
     useState<AllAttributesResponse | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     dispatch(getAttributes(buildAttributeParameters(activeFilters, pageNumber)));
   }, [dispatch, activeFilters, pageNumber]);
+
+  // Lets the Dashboard's "Create attribute" quick action link straight into
+  // this modal via /attributes?action=create instead of just landing on the list.
+  useEffect(() => {
+    if (searchParams.get("action") === "create") {
+      setCreateOpen(true);
+      searchParams.delete("action");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   function handleAddFilter(key: string, value: string) {
     setActiveFilters((prev) => [...prev.filter((filter) => filter.key !== key), { key, value }]);

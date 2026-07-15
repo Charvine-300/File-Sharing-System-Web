@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { deleteUser, getUsers, updateUserStatus } from "../../app/features/userMgmtSlice";
 import { useCan } from "../../hooks/usePermission";
@@ -56,10 +57,21 @@ export default function UsersList() {
   );
   const [togglingUser, setTogglingUser] = useState<AllUsersResponse | null>(null);
   const [deletingUser, setDeletingUser] = useState<AllUsersResponse | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     dispatch(getUsers(buildUserParameters(activeFilters, pageNumber)));
   }, [dispatch, activeFilters, pageNumber]);
+
+  // Lets the Dashboard's "Create user" quick action link straight into this
+  // modal via /users?action=create instead of just landing on the list.
+  useEffect(() => {
+    if (searchParams.get("action") === "create") {
+      setCreateOpen(true);
+      searchParams.delete("action");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   function handleAddFilter(key: string, value: string) {
     setActiveFilters((prev) => [...prev.filter((filter) => filter.key !== key), { key, value }]);
